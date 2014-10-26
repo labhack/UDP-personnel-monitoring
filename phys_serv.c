@@ -2,10 +2,10 @@
  * phys_serv.c - Physiology Server
  * 
  * Team AFRL LabHack - "Spotty Data Connection for Personnel Monitoring"
- * - C by Val A. Red - GNU GPLv3 license -
+ * - Joe Baylor, David McAffee , Benjamin Natarian Val Red, Devin Spatz - GNU GPLv3 license -
  * 
- * This server handles lightweight datagrams and parses it for processing by 
- * other JS scripts.
+ * This server handles lightweight UDP datagrams and parses it for use by 
+ * python and PHP scripts.
  */
 
 #include <sys/socket.h>
@@ -17,6 +17,8 @@
 #include <strings.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <inttypes.h>
+#include <time.h>
 
 // truncated sockaddr definition and MAXLINE defines:
 typedef struct sockaddr SA;
@@ -24,7 +26,7 @@ typedef struct sockaddr SA;
 
 // Error Handling Prototype: 
 void u_error(char *msg);
-// Safe networking prototypes (avoids buffer overflows, etc.) 
+// Safe networking prototypes (for error handling, etc.) 
 int Socket(int domain, int type, int protocol);
 void Bind(int sockfd, struct sockaddr *my_addr, int addrlen);
 ssize_t Recvfrom(int sockfd, void *buf, size_t len, int flags,
@@ -36,35 +38,55 @@ void *Malloc(size_t size);
 
 // Main daemon function. 
 int main() {
-	int port = 9001;
-	// The first byte is an opcode. We can strncpy with an offset of 1.
+	// Our port number is over 9000!
+	int sockfd, port = 9001;
+	// We're using a basic UDP header structure
 	struct sockaddr_in srvaddr, clntaddr;
 	sockfd = Socket (AF_INET, SOCK_DGRAM, 0);
 	// Zero the memory for the server address.
 	bzero(&srvaddr, sizeof(srvaddr));
 	// Populate the server address socket
 	srvaddr.sin_family = AF_INET;
-	srvaddr.sin_addr.s=addr = htonl(INADDR_ANY);
+	srvaddr.sin_addr.s_addr = htonl(INADDR_ANY);
 	srvaddr.sin_port = htons(port);
 	// Finally, bind the UDP Socket!
 	Bind(sockfd, (SA* ) &srvaddr, sizeof(srvaddr)); 	
-	int n;
+	int n; int y = 1;
 	socklen_t len;
+	// Maxline is an arbitrary max length. 
 	char msg[MAXLINE];
-	// Start the physiology datagram listening daemon!
+	// Start the physiology datagram listening daemon
 	while (1) {
 		len = sizeof(clntaddr);
-		uint8_t opcode;
-		strncpy(opcode, msg, 1);
-		fprintf(stdout, "Hi! Your opcode is!"); 		
-		// If not 1, it is a check-in. Treat 1 as an emergency!
-		if (opcode != 1) {
-			; // TO BE CONTINUED!
+		// We invoke a UDP receive and poll it to check for new dgrams
+		n = Recvfrom (sockfd, msg, MAXLINE, 0, (SA *) &clntaddr, &len);
+		if (n>0) {
+			fprintf(stderr, "%s\n", msg); 
+			// for portability, we use a basic 255 filename minimum
+			char filename [255] = {0};
+			// We use snprintf to assemble a filename string for 
+			// what we generate a file for. 
+			snprintf(filename, sizeof(filename), "%d.ebola", y);
+			FILE *fp;
+			fp = fopen(filename,"wb");
+			// Write a new file for Python/PHP use based on data. 
+			fwrite(msg, sizeof(msg[0]), sizeof(msg)/sizeof(msg[0]), fp);
+			fclose(fp);
+			y++;
 		}
+		// zero the message string for safety!
+		memset(msg,0,sizeof(msg));
 		
 	}
 	return 0;
 }
+
+/* 
+ALL THE BELOW FUNCTIONS are for more robust 
+error-handling. They are very basic in how they throw 
+exceptions for basic errors that would silently be tripped 
+in a bad execution. 
+*/
 
 int Socket(int domain, int type, int protocol)
 {
@@ -107,3 +129,10 @@ void *Malloc(size_t size)
         u_error("Malloc error");
     return p;
 }
+
+void u_error(char *msg) /* unix-style error */
+{
+    fprintf(stderr, "%s: %s\n", msg, strerror(errno));
+    exit(0);
+}
+
