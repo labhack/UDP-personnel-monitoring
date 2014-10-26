@@ -1,6 +1,6 @@
 # AFRL Problem: Personnel Monitoring with Intermittent Data Connection 
 
-#### By: Joe Baylor, David McAffee , Benjamin Natarian Val Red, Devin Spatz 
+#### By: Joe Baylor, David McAffee , Benjamin Natarian, Val Red, Devin Spatz 
 
 This is the development repository for LabHack 2014, USAF AFRL's first 
 hackathon! Specifically, this github repo will include the server-client C files 
@@ -8,15 +8,16 @@ used to address the AFRL "Spotty Data Connection for Personnel Monitoring" probl
 
 ## High-level overview
 
-Our solution for addressing intermittent data connection is by applying the simplicty and robustness of 
+Our solution for addressing intermittent data connection is by applying the simplicity and robustness of 
 the User Datagram Protocol, UDP, and amplifying it with high-frequency, by-the-minute  
 check-ins using customized, standardized datagrams such that 
-reliability is maximized in spite of the risk of data-loss or corruption via 
+reliability is maximized in spite of the potential for data-loss or corruption via 
 weak connection sources and connection interruptions. Such risk 
 is mitigated by aspects of server-side validation and data analysis reinforced 
 by the near-constant device datagram firing tempo from devices belonging to personnel over large distances in cases such as disaster relief operations.  
 
 ## Chronological File Function Order
+0. Ebola/ -- Client-side C++ Data Gathering simulator, generates data set "ebola.str" based on theoretical scenario. 
 1. ebola.str -- A sample string of datasets from a theoretical disaster relief worker. 
 2. phys\_client.c -- A C application that takes the data set (can be modularly 
 substituted with raw sensor data) and interprets the data into the less-than-80 
@@ -27,7 +28,7 @@ processed by Python and PHP web applications.
 4. server\_script.py - This Python scripts reads the space-delimited data and 
 then formats it into an XML-like form that can be read and presented by the 
 PHP web application for visualization. 
-5. PHP web application - These are the web files that present all our data 
+5. www/ -- PHP web application - These are the web files that present all our data 
 virtually in real-time!  
 
 ## Physiology Datagram RFC (feel free to comment here!) 
