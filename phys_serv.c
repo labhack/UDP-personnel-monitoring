@@ -66,7 +66,7 @@ int main() {
 			char filename [255] = {0};
 			// We use snprintf to assemble a filename string for 
 			// what we generate a file for. 
-			snprintf(filename, sizeof(filename), "%d.ebola", y);
+			snprintf(filename, sizeof(filename), "Data/%d.ebola", y);
 			FILE *fp;
 			fp = fopen(filename,"wb");
 			// Write a new file for Python/PHP use based on data. 
