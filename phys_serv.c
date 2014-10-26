@@ -2,10 +2,10 @@
  * phys_serv.c - Physiology Server
  * 
  * Team AFRL LabHack - "Spotty Data Connection for Personnel Monitoring"
- * - Joe Baylor, David McAffee , Benjamin Natarian Val Red, Devin Spatz - GNU GPLv3 license -
+ * - C by Val A. Red - GNU GPLv3 license -
  * 
- * This server handles lightweight UDP datagrams and parses it for use by 
- * python and PHP scripts.
+ * This server handles lightweight datagrams and parses it for processing by 
+ * other JS scripts.
  */
 
 #include <sys/socket.h>
@@ -38,9 +38,8 @@ void *Malloc(size_t size);
 
 // Main daemon function. 
 int main() {
-	// Our port number is over 9000!
 	int sockfd, port = 9001;
-	// We're using a basic UDP header structure
+	// The first byte is an opcode indicating status severity.
 	struct sockaddr_in srvaddr, clntaddr;
 	sockfd = Socket (AF_INET, SOCK_DGRAM, 0);
 	// Zero the memory for the server address.
@@ -53,40 +52,45 @@ int main() {
 	Bind(sockfd, (SA* ) &srvaddr, sizeof(srvaddr)); 	
 	int n; int y = 1;
 	socklen_t len;
-	// Maxline is an arbitrary max length. 
 	char msg[MAXLINE];
 	// Start the physiology datagram listening daemon
 	while (1) {
 		len = sizeof(clntaddr);
-		// We invoke a UDP receive and poll it to check for new dgrams
 		n = Recvfrom (sockfd, msg, MAXLINE, 0, (SA *) &clntaddr, &len);
 		if (n>0) {
-			fprintf(stderr, "%s\n", msg); 
-			// for portability, we use a basic 255 filename minimum
+			// To account for individual client identities, get the IP address!
+			char ipaddr[INET_ADDRSTRLEN];
+			inet_ntop(AF_INET,&(clntaddr.sin_addr),ipaddr,INET_ADDRSTRLEN);
+			// strncat a space delimiter and the clean IP addess
+			strncat(msg, " ", 1);
+			strncat(msg, ipaddr, sizeof(ipaddr));
+			// Print for debugging! 
+			fprintf(stderr, "%s\n", msg);
+			// We'll use a portable 255-character limited filename
 			char filename [255] = {0};
-			// We use snprintf to assemble a filename string for 
-			// what we generate a file for. 
-			snprintf(filename, sizeof(filename), "Data/%d.ebola", y);
+			// IMPORTANT !!!!
+			
+			// below directory should line up with where the 
+			// server_script.py file is drawing data from!
+
+			// IMPORTANT !!!!
+			snprintf(filename, sizeof(filename), "/home/devinws/Data/%d.ebola", y);
 			FILE *fp;
 			fp = fopen(filename,"wb");
-			// Write a new file for Python/PHP use based on data. 
-			fwrite(msg, sizeof(msg[0]), sizeof(msg)/sizeof(msg[0]), fp);
+			fwrite(msg, strlen(msg), 1, fp);
 			fclose(fp);
 			y++;
 		}
-		// zero the message string for safety!
 		memset(msg,0,sizeof(msg));
-		
+		// Let's zero for security! Always sanitize memory before re-use!	
 	}
 	return 0;
 }
 
-/* 
-ALL THE BELOW FUNCTIONS are for more robust 
-error-handling. They are very basic in how they throw 
-exceptions for basic errors that would silently be tripped 
-in a bad execution. 
-*/
+/* Everything beyond
+ * this point is very trivial error-checking for severe error conditions.
+ * Will throw appropriate error notice before terminating..
+ */
 
 int Socket(int domain, int type, int protocol)
 {
