@@ -1,0 +1,51 @@
+LabHack 2014
+Ebola/Disaster Relief Worker Monitor
+10/25/14 10AM - 10/26/14
+Developer: Ben Natarian
+
+This program is a back end for sensor data, with the assumption that raw data has been prepared and is revived
+in the format of a integer. This program will constantly monitor the input, in this case it is all stored to 
+a data structure at the beginning, then outputting data only once every minute in the case of a clear signal,
+ or all data every five seconds in the case of an alert. 
+ 
+ ***************************************************************************************************************
+ Files:
+ 
+	Human.h					Class DataGather.h declaration	 ->Constants and function declaration
+	Human.cpp 				Class DataGather.h definition	 ->Output and Storage
+	ProcessEbola.cpp		Implementation for DataGather    ->Input and call hierarchy
+	
+***************************************************************************************************************
+Constants: (All are const unsigned int)
+
+	ECG_THRESH_H = 		150;(Beats/Minute)		Max
+	ECG_THRESH_L = 		40; (Beats/Minute)		Min
+	O2_THRESH_L = 		95; (%Oxygen in Blood)	Min	
+	RESP_THRESH_H = 	30;	(Breath/Minute)		Max
+	RESP_THRESH_L = 	8;	(Breath/Minute)		Min
+	TEMP_THRESH_H = 	100;(Fahrenheit) 		Max
+	TEMP_THRESH_L = 	96;	(Fahrenheit)		Min
+
+***************************************************************************************************************
+Class DataGather:
+
+private
+-------
+ifstream input 				-> input object
+vector<vector<double>> data	-> 2D array: values across columns, timestamps down rows 
+void TransmitAll (int line)	->'transmits' data to external file in format for transport over network 
+									(some minor changes are needed for actual transmission)
+									
+public
+-------
+DataGather()						->Default constructor
+void addData(int line, double in)	->add data to the vector array: line number then information to put in
+void Determine()					->scans data for an alert value then outputs data at the rate for alert, or base rate
+void print();						->prints out all stored information at one time. 
+
+***************************************************************************************************************
+Future work:
+
+1. Normalize and concede data into a 32 bytes of data
+2. Create robust input for sensor data to allow for waveform data and processing 
+3. Advanced recognition for alerts
